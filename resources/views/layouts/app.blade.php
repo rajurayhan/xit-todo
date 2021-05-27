@@ -99,21 +99,107 @@
                     table.draw();
                 },
                 error: function (err) {
-                    console.log('Error:', err.responseText);
                     if(err.status){ // Validation Error
                         var response = JSON.parse(err.responseText);
 
                         $.each(response.errors, function( index, error ) {
-                            showError(error.message);
+                            showError(error.message, 'Error');
                         });
                         
                     }
-                    {{-- showError(err.message); --}}
+                    
                     $('#addModal').modal('toggle');
                 }
             });
 
         });
+
+        function editTask(id){
+            var url = "{{ route('todos.index') }}";
+            url = url + '/' + id;
+            getTask(id);
+            $('#editModal').modal('toggle');
+        }
+
+        function updateTask(){
+            var title = $('#name-update').val();
+            var id = $('#task_id').val();
+            if(!title){
+                showError('Title Field Is Required');
+                return false;
+            }
+
+            $.ajax({
+                data: $('#updateForm').serialize(),
+                url: "{{ route('todos.index') }}" + '/' + id,
+                type: "PUT",
+                dataType: 'json',
+                
+                success: function (response) {
+                    //table.draw();
+                    console.log(response);
+                    $('#name-update').val('');
+                    $('#task_id').val('');
+                    $('#editModal').modal('toggle');
+                    showSuccess(response.message);
+                    table.draw();
+                },
+                error: function (err) {
+                    if(err.status){ // Validation Error
+                        var response = JSON.parse(err.responseText);
+
+                        $.each(response.errors, function( index, error ) {
+                            showError(error.message, 'Error');
+                        });
+                        
+                    }
+                    
+                    $('#addModal').modal('toggle');
+                }
+            });
+        }
+        function deleteTask(id){
+            var url = "{{ route('todos.index') }}";
+            url = url + '/' + id;
+
+            if(confirm("Are you sure to delete?")){
+                $.ajax({
+                    url: url,
+                    type: "DELETE",
+                    dataType: 'json',
+                    
+                    success: function (response) {
+                        console.log(response);
+                        showSuccess(response.message);
+                        table.draw();
+                    },
+                    error: function (err) {
+                        showError('Something went wrong', 'Error');
+                    }
+                });
+            }
+        }
+
+        function getTask(id){
+            var data;
+            var url = "{{ route('todos.index') }}";
+            url = url + '/' + id;
+            $.ajax({
+                url: url,
+                type: "GET",
+                dataType: 'json',
+                
+                success: function (response) {
+                    data = response.data
+                    $('#name-update').val(data.title);
+                    $('#task_id').val(data.id);
+                },
+                error: function (err) {
+                    $('#name-update').val('');
+                    $('#task_id').val('');
+                }
+            });
+        }
 
         function showError($message){
             toastr.options = {

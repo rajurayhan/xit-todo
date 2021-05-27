@@ -22,7 +22,7 @@ class TodoController extends Controller
             return Datatables::of($data)
                 ->addIndexColumn()
                 ->addColumn('action', function($row){
-                    $actionBtn = '<a href="javascript:void(0)" class="edit btn btn-success btn-sm">Edit</a> <a href="javascript:void(0)" class="delete btn btn-danger btn-sm">Delete</a>';
+                    $actionBtn = '<a href="javascript:void(0)" onclick="editTask('.$row->id.')" class="edit btn btn-success btn-sm">Edit</a> <a href="javascript:void(0)" onclick="deleteTask('.$row->id.')" class="delete btn btn-danger btn-sm">Delete</a>';
                     return $actionBtn;
                 })
                 ->rawColumns(['action'])
@@ -49,7 +49,6 @@ class TodoController extends Controller
      */
     public function store(Request $request)
     {
-        // return $request->all();
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255|',
         ]);
@@ -66,7 +65,7 @@ class TodoController extends Controller
             $todoObj->save();
             return WebApiResponse::success(200, $todoObj->toArray(), 'Created Successfully');
         } catch (\Throwable $th) {
-            return WebApiResponse::error(404, [$th->getMessage()], 'Something Went Wrong');
+            return WebApiResponse::error(500, [$th->getMessage()], 'Something Went Wrong');
         }
 
     }
@@ -79,7 +78,13 @@ class TodoController extends Controller
      */
     public function show($id)
     {
-        //
+        try {
+            $todo = Todo::findOrFail($id);
+            return WebApiResponse::success(200, $todo->toArray(), 'Fetched Successfully');
+        } catch (\Throwable $th) {
+            return WebApiResponse::error(500, [$th->getMessage()], 'Something Went Wrong');
+        }
+
     }
 
     /**
@@ -102,7 +107,24 @@ class TodoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255|',
+        ]);
+
+        if ($validator->fails()) {
+            return WebApiResponse::validationError($validator, $request);
+        }
+        try {
+            $todo = Todo::findOrFail($id);
+            $todo->title = $request->title;
+
+            $todo->save();
+
+            return WebApiResponse::success(200, $todo->toArray(), 'Updated Successfully');
+        } catch (\Throwable $th) {
+            return WebApiResponse::error(500, [$th->getMessage()], 'Something Went Wrong');
+        }
+
     }
 
     /**
@@ -113,6 +135,14 @@ class TodoController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            $todo = Todo::findOrFail($id);
+
+            $todo->delete();
+
+            return WebApiResponse::success(200, [], 'Deleted Successfully');
+        } catch (\Throwable $th) {
+            return WebApiResponse::error(500, [$th->getMessage()], 'Something Went Wrong');
+        }
     }
 }
